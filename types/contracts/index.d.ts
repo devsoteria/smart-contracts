@@ -4521,6 +4521,16 @@ export interface MCRInstance extends Truffle.ContractInstance {
     txDetails?: Truffle.TransactionDetails
   ): Promise<[BigNumber, BigNumber]>;
 
+  getTokenBuyPrice(
+    _amount: number | BigNumber | string,
+    txDetails?: Truffle.TransactionDetails
+  ): Promise<BigNumber>;
+
+  getTokenSellPrice(
+    _amount: number | BigNumber | string,
+    txDetails?: Truffle.TransactionDetails
+  ): Promise<BigNumber>;
+
   getUintParameters(
     code: string | BigNumber,
     txDetails?: Truffle.TransactionDetails
@@ -4554,6 +4564,15 @@ export interface MCRInstance extends Truffle.ContractInstance {
       txDetails?: Truffle.TransactionDetails
     ): Promise<number>;
   };
+
+  getTotalMutualAssetsValueETH(
+    txDetails?: Truffle.TransactionDetails
+  ): Promise<BigNumber>;
+
+  getCurrencyETHRate(
+    currency: string | BigNumber,
+    txDetails?: Truffle.TransactionDetails
+  ): Promise<BigNumber>;
 
   addMCRData: {
     (
@@ -4632,6 +4651,15 @@ export interface MCRInstance extends Truffle.ContractInstance {
     txDetails?: Truffle.TransactionDetails
   ): Promise<BigNumber>;
 
+  calculateTokenPointPrice(
+    mcrETH: number | BigNumber | string,
+    mutualAssetsValueETH: number | BigNumber | string,
+    tokenExponent: number | BigNumber | string,
+    a: number | BigNumber | string,
+    c: number | BigNumber | string,
+    txDetails?: Truffle.TransactionDetails
+  ): Promise<BigNumber>;
+
   changeMasterAddress: {
     (
       _masterAddress: string | BigNumber,
@@ -4654,6 +4682,10 @@ export interface MCRInstance extends Truffle.ContractInstance {
   calVtpAndMCRtp(
     txDetails?: Truffle.TransactionDetails
   ): Promise<[BigNumber, BigNumber]>;
+
+  getTokenPointPrice(
+    txDetails?: Truffle.TransactionDetails
+  ): Promise<BigNumber>;
 
   nxMasterAddress(txDetails?: Truffle.TransactionDetails): Promise<string>;
 

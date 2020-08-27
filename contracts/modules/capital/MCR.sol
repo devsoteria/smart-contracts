@@ -46,6 +46,8 @@ contract MCR is Iupgradable {
   uint public dynamicMincapThresholdx100 = 13000;
   uint public dynamicMincapIncrementx100 = 100;
 
+  Pool1 internal p2;
+
   event MCREvent(
     uint indexed date,
     uint blockNumber,
@@ -120,6 +122,7 @@ contract MCR is Iupgradable {
     mr = MemberRoles(ms.getLatestAddress("MR"));
     td = TokenData(ms.getLatestAddress("TD"));
     proposalCategory = ProposalCategory(ms.getLatestAddress("PC"));
+    p2 = Pool1(ms.getLatestAddress("P2"));
   }
 
   /**
@@ -370,6 +373,73 @@ contract MCR is Iupgradable {
     } else {
       p1.mcrOracliseFail(newMCRDate, pd.mcrFailTime());
     }
+  }
+
+  function getTokenPointPrice() public view returns (uint) {
+    uint a;
+    uint c;
+    uint tokenExponent = td.tokenExponent();
+    uint mutualAssetsValueETH = getTotalMutualAssetsValueETH();
+    uint mcrETH = pd.getLastMCREther();
+    (a, c, ) = pd.getTokenPriceDetails("ETH");
+    return calculateTokenPointPrice(mcrETH, mutualAssetsValueETH, tokenExponent, a, c);
+  }
+
+  function calculateTokenPointPrice(
+    uint mcrETH,
+    uint mutualAssetsValueETH,
+    uint tokenExponent,
+    uint a,
+    uint c
+  ) public view returns (uint)
+    uint mcrMultiplier = 10000;
+    uint mcrPercentageX100 = mutualAssetsValueETH.div(mcrETH).mul(mcrMultiplier);
+    uint mcrMagnitude = mcrMagnitude ** tokenExponent;
+    uint tokenPrice = (mcrPercentageX100 ** tokenExponent).mul(mcrETH).div(c).div(mcrMagnitude).add(a.mul(mcrPercentageX100));
+    return tokenPrice;
+  }
+
+  function getTokenBuyPrice(
+    uint nxmAmount
+  ) public view returns (uint) {
+    return 13;
+  }
+
+  function getTokenSellPrice(
+    uint nxmAmount
+  ) public view returns (uint) {
+    return 13;
+  }
+
+  function calculateTokenIntegralPrice(
+    uint mcrETH,
+    uint mutualAssetsValueETH,
+    uint tokenExponent,
+    uint a,
+    uint c
+  ) {
+    uint tokenPrice = (mcrPercentageX100 ** 5).mul(mcrETH).div(c).add(a.mul(mcrPercentageX100));
+  }
+
+
+  function getTotalMutualAssetsValueETH() public view returns (uint balance) {
+    bytes4[] memory currencies = pd.getAllCurrencies();
+    for (uint i = 1; i < currencies.length; i++) {
+      bytes4 currency = currencies[i];
+
+      IERC20 erc20 = IERC20(pd.getCurrencyAssetAddress(currency));
+      uint totalTokenBalance = erc20.balanceOf(address(p1)).add(erc20.balanceOf(address(p2)));
+      if (getCurrencyETHRate(currency) > 0) {
+        balance = balance.add((totalTokenBalance.mul(100)).div(getCurrencyETHRate(currency)));
+      }
+    }
+
+    balance = balance.add(address(p1).balance).add(address(p2).balance);
+  }
+
+  function getCurrencyETHRate(bytes4 currency) public view returns (uint) {
+    //  TODO: use new oracle source for fetching currency rate here
+    return pd.getIAAvgRate(currency);
   }
 
 }
