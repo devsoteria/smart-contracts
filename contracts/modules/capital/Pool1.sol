@@ -258,6 +258,39 @@ contract Pool1 is Iupgradable {
     success = true;
   }
 
+  function buyTokens() public payable isMember checkPause returns (bool success) {
+    /*
+      const c = Decimal(C);
+  MCReth = Decimal(MCReth);
+  const MInverted = c.div(Decimal(MCReth));
+  Vt0 = Decimal(Vt0);
+  deltaETH = Decimal(deltaETH);
+  const Vt1 = Vt0.add(deltaETH);
+  const MCRPerc0 = Vt0.div(MCReth);
+  const MCRPerc1 = Vt1.div(MCReth);
+  function integral (point) {
+    return Decimal(-1).div(3).mul(MInverted).div(Decimal(point).pow(3));
+  }
+  const adjustedTokenAmount = (integral(MCRPerc1).sub(integral(MCRPerc0))).mul(MCReth);
+  const averageAdjustedPrice = deltaETH.div(adjustedTokenAmount);
+  const genuinePrice = averageAdjustedPrice.add(Decimal(A));
+
+  const tokens = deltaETH.div(genuinePrice);
+    */
+    uint ethValue = msg.value;
+    require(ethValue > 0);
+
+    uint a;
+    uint c;
+    (a, c, _) = pd.getTokenPriceDetails("ETH");
+
+  }
+
+  function computeTokensForETHAssetValue(uint ethAssetValue) public {
+
+
+  }
+
   /// @dev Sends a given amount of Ether to a given address.
   /// @param amount amount (in wei) to send.
   /// @param _add Receiver's address.
