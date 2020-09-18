@@ -37,7 +37,9 @@ contract Pool1 is Iupgradable {
   TokenData internal td;
   bool internal locked;
 
-  uint internal constant DECIMAL1E18 = uint(10) ** 18;
+  uint public constant DECIMAL1E18 = uint(10) ** 18;
+  uint public constant DECIMAL1E05 = uint(10) ** 5;
+  uint public constant MCR_PERCENTAGE_MULTIPLIER = uint(10) ** 4;
   // uint internal constant PRICE_STEP = uint(1000) * DECIMAL1E18;
 
   event Apiresult(address indexed sender, string msg, bytes32 myid);
@@ -258,37 +260,75 @@ contract Pool1 is Iupgradable {
     success = true;
   }
 
-  function buyTokens() public payable isMember checkPause returns (bool success) {
-    /*
-      const c = Decimal(C);
-  MCReth = Decimal(MCReth);
-  const MInverted = c.div(Decimal(MCReth));
-  Vt0 = Decimal(Vt0);
-  deltaETH = Decimal(deltaETH);
-  const Vt1 = Vt0.add(deltaETH);
-  const MCRPerc0 = Vt0.div(MCReth);
-  const MCRPerc1 = Vt1.div(MCReth);
-  function integral (point) {
-    return Decimal(-1).div(3).mul(MInverted).div(Decimal(point).pow(3));
-  }
-  const adjustedTokenAmount = (integral(MCRPerc1).sub(integral(MCRPerc0))).mul(MCReth);
-  const averageAdjustedPrice = deltaETH.div(adjustedTokenAmount);
-  const genuinePrice = averageAdjustedPrice.add(Decimal(A));
-
-  const tokens = deltaETH.div(genuinePrice);
-    */
-    uint ethValue = msg.value;
-    require(ethValue > 0);
+  function buyTokens(uint minTokenAmount) public payable isMember checkPause {
+    uint ethBuyAmount = msg.value;
+    require(ethBuyAmount > 0);
 
     uint a;
     uint c;
-    (a, c, _) = pd.getTokenPriceDetails("ETH");
+    uint totalValue0;
+    uint mcrPercentage0;
+    (a, c, ) = pd.getTokenPriceDetails("ETH");
+    (totalValue0, mcrPercentage0) = m1._calVtpAndMCRtp(address(this).balance);
+    uint mcrEth = pd.getLastMCREther();
+    uint totalValue1 = totalValue0.add(ethBuyAmount);
+    uint tokenPrice = getTokenPriceForDeltaETH(totalValue0, totalValue1, mcrEth, a, c);
+    uint purchasedTokenAmount = ethBuyAmount.div(tokenPrice);
 
+    require(purchasedTokenAmount > minTokenAmount, "tokenAmount is below minTokenAmount");
+    tc.mint(msg.sender, purchasedTokenAmount);
   }
 
-  function computeTokensForETHAssetValue(uint ethAssetValue) public {
+  function sellTokens(uint ethOut, uint minNXMTokensIn, uint maxNXMTokensOut) public isMember checkPause {
+//    require(tk.balanceOf(msg.sender) >= _amount, "Not enough balance");
+    require(!tf.isLockedForMemberVote(msg.sender), "Member voted");
 
+    uint a;
+    uint c;
+    uint totalValue0;
+    uint mcrPercentage0;
+    (a, c, ) = pd.getTokenPriceDetails("ETH");
+    (totalValue0, ) = m1._calVtpAndMCRtp(address(this).balance);
+    uint mcrEth = pd.getLastMCREther();
+    uint totalValue1 = totalValue0.sub(ethBuyAmount);
+    uint tokenPrice = calculateTokenPriceForDeltaETH(totalValue0, totalValue1, mcrEth, a, c);
+    uint purchasedTokenAmount = ethBuyAmount.div(tokenPrice);
 
+    require(purchasedTokenAmount >= minNXMTokensIn, "Token amount must be greater than minNXMTokensIn");
+    require(purchasedTokenAmount <= maxNXMTokensOut, "Token amount must be less than minNXMTokensOut");
+
+    tc.burn(msg.sender, purchasedTokenAmount);
+    msg.sender.transfer(ethOut);
+  }
+
+  function calculateTokenPriceForDeltaETH(
+    uint currentTotalAssetValue,
+    uint nextTotalAssetValue,
+    uint mcrETH,
+    uint a,
+    uint c
+  ) public view returns (uint) {
+    uint mcrPercentage0 = currentTotalAssetValue.mul(MCR_PERCENTAGE_MULTIPLIER).div(mcrEth);
+    uint mcrPercentage1 = nextTotalAssetValue.mul(MCR_PERCENTAGE_MULTIPLIER).div(mcrEth);
+
+    uint constNumerator = c.mul(DECIMAL1E18).div(mcrEth);
+    uint adjustedTokenAmount =
+    nextTotalAssetValue > currentTotalAssetValue ?
+    calculateAdjustedTokenAmount(mcrPercentage1, mcrPercentage0, constNumerator) :
+    calculateAdjustedTokenAmount(mcrPercentage0, mcrPercentage1, constNumerator);
+    uint adjustedTokenPrice = ethBuyAmount.div(adjustedTokenAmount);
+    uint tokenPrice = adjustedTokenPrice.add(a.mul(DECIMAL1E18).div(DECIMAL1E05));
+    return tokenPrice;
+  }
+
+  function calculateAdjustedTokenAmount(
+    uint mcrPercentage0,
+    uint mcrPercentage1,
+    uint constNumerator
+  ) public view returns (uint) {
+    uint point0 = constNumerator.div(3).div(mcrPercentage0 ** 3);
+    uint point1 = constNumerator.div(3).div(mcrPercentage1 ** 3);
+    return point0.sub(point1);
   }
 
   /// @dev Sends a given amount of Ether to a given address.
