@@ -38,6 +38,8 @@ contract Quotation is Iupgradable {
     MemberRoles internal mr;
     bool internal locked;
 
+    mapping (address => uint) public coverPurchaseNonces;
+
     event RefundEvent(address indexed user, bool indexed status, uint holdedCoverID, bytes32 reason);
 
     modifier noReentrancy() {
@@ -46,7 +48,7 @@ contract Quotation is Iupgradable {
         _;
         locked = false;
     }
-    
+
     /**
      * @dev Iupgradable Interface to update dependent contract address
      */
@@ -62,7 +64,7 @@ contract Quotation is Iupgradable {
     }
 
     function sendEther() public payable {
-        
+
     }
 
     /**
@@ -71,10 +73,10 @@ contract Quotation is Iupgradable {
      * sum assured of all areas in which the quotation lies
      * Unlocks the CN tokens of the cover. Updates the Total Sum Assured value.
      * @param _cid Cover Id.
-     */ 
+     */
     function expireCover(uint _cid) public {
         require(checkCoverExpired(_cid) && qd.getCoverStatusNo(_cid) != uint(QuotationData.CoverStatus.CoverExpired));
-        
+
         tf.unlockCN(_cid);
         bytes4 curr;
         address scAddress;
@@ -82,14 +84,14 @@ contract Quotation is Iupgradable {
         (, , scAddress, curr, sumAssured, ) = qd.getCoverDetailsByCoverID1(_cid);
         if (qd.getCoverStatusNo(_cid) != uint(QuotationData.CoverStatus.ClaimAccepted))
             _removeSAFromCSA(_cid, sumAssured);
-        qd.changeCoverStatusNo(_cid, uint8(QuotationData.CoverStatus.CoverExpired));       
+        qd.changeCoverStatusNo(_cid, uint8(QuotationData.CoverStatus.CoverExpired));
     }
 
     /**
      * @dev Checks if a cover should get expired/closed or not.
      * @param _cid Cover Index.
      * @return expire true if the Cover's time has expired, false otherwise.
-     */ 
+     */
     function checkCoverExpired(uint _cid) public view returns(bool expire) {
 
         expire = qd.getValidityOfCover(_cid) < uint64(now);
@@ -99,17 +101,17 @@ contract Quotation is Iupgradable {
     /**
      * @dev Updates the Sum Assured Amount of all the quotation.
      * @param _cid Cover id
-     * @param _amount that will get subtracted Current Sum Assured 
+     * @param _amount that will get subtracted Current Sum Assured
      * amount that comes under a quotation.
-     */ 
+     */
     function removeSAFromCSA(uint _cid, uint _amount) public onlyInternal {
-        _removeSAFromCSA(_cid, _amount);        
+        _removeSAFromCSA(_cid, _amount);
     }
 
     /**
      * @dev Makes Cover funded via NXM tokens.
      * @param smartCAdd Smart Contract Address
-     */ 
+     */
     function makeCoverUsingNXMTokens(
         uint[] memory coverDetails,
         uint16 coverPeriod,
@@ -122,7 +124,7 @@ contract Quotation is Iupgradable {
         public
         isMemberAndcheckPause
     {
-        
+
         tc.burnFrom(msg.sender, coverDetails[2]); //need burn allowance
         _verifyCoverDetails(msg.sender, smartCAdd, coverCurr, coverDetails, coverPeriod, _v, _r, _s);
     }
@@ -157,7 +159,7 @@ contract Quotation is Iupgradable {
         );
     }
 
-    /** 
+    /**
      * @dev Verifies signature.
      * @param coverDetails details related to cover.
      * @param coverPeriod validity of cover.
@@ -165,7 +167,7 @@ contract Quotation is Iupgradable {
      * @param _v argument from vrs hash.
      * @param _r argument from vrs hash.
      * @param _s argument from vrs hash.
-     */ 
+     */
     function verifySign(
         uint[] memory coverDetails,
         uint16 coverPeriod,
@@ -174,7 +176,7 @@ contract Quotation is Iupgradable {
         uint8 _v,
         bytes32 _r,
         bytes32 _s
-    ) 
+    )
         public
         view
         returns(bool)
@@ -190,13 +192,13 @@ contract Quotation is Iupgradable {
      * @param coverDetails details realted to cover.
      * @param coverPeriod validity of cover.
      * @param smaratCA smarat contract address.
-     */ 
+     */
     function getOrderHash(
         uint[] memory coverDetails,
         uint16 coverPeriod,
         bytes4 curr,
         address smaratCA
-    ) 
+    )
         public
         view
         returns(bytes32)
@@ -210,6 +212,7 @@ contract Quotation is Iupgradable {
                 coverDetails[2],
                 coverDetails[3],
                 coverDetails[4],
+                coverDetails[5],
                 address(this)
             )
         );
@@ -221,7 +224,7 @@ contract Quotation is Iupgradable {
      * @param v argument from vrs hash.
      * @param r argument from vrs hash.
      * @param s argument from vrs hash.
-     */  
+     */
     function isValidSignature(bytes32 hash, uint8 v, bytes32 r, bytes32 s) public view returns(bool) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, hash));
@@ -230,7 +233,7 @@ contract Quotation is Iupgradable {
     }
 
     /**
-     * @dev to get the status of recently holded coverID 
+     * @dev to get the status of recently holded coverID
      * @param userAdd is the user address in concern
      * @return the status of the concerned coverId
      */
@@ -244,16 +247,16 @@ contract Quotation is Iupgradable {
             return int(qd.holdedCoverIDStatus(holdedCoverID));
         }
     }
-    
+
     /**
-     * @dev to initiate the membership and the cover 
+     * @dev to initiate the membership and the cover
      * @param smartCAdd is the smart contract address to make cover on
      * @param coverCurr is the currency used to make cover
      * @param coverDetails list of details related to cover like cover amount, expire time, coverCurrPrice and priceNXM
      * @param coverPeriod is cover period for which cover is being bought
-     * @param _v argument from vrs hash 
-     * @param _r argument from vrs hash 
-     * @param _s argument from vrs hash 
+     * @param _v argument from vrs hash
+     * @param _r argument from vrs hash
+     * @param _s argument from vrs hash
      */
     function initiateMembershipAndCover(
         address smartCAdd,
@@ -263,7 +266,7 @@ contract Quotation is Iupgradable {
         uint8 _v,
         bytes32 _r,
         bytes32 _s
-    ) 
+    )
         public
         payable
         checkPause
@@ -288,7 +291,7 @@ contract Quotation is Iupgradable {
     }
 
     /**
-     * @dev to get the verdict of kyc process 
+     * @dev to get the verdict of kyc process
      * @param status is the kyc status
      * @param _add is the address of member
      */
@@ -299,12 +302,12 @@ contract Quotation is Iupgradable {
 
     /**
      * @dev transfering Ethers to newly created quotation contract.
-     */  
+     */
     function transferAssetsToNewContract(address newAdd) public onlyInternal noReentrancy {
         uint amount = address(this).balance;
         IERC20 erc20;
         if (amount > 0) {
-            // newAdd.transfer(amount);   
+            // newAdd.transfer(amount);
             Quotation newQT = Quotation(newAdd);
             newQT.sendEther.value(amount)();
         }
@@ -324,7 +327,7 @@ contract Quotation is Iupgradable {
      * @dev Creates cover of the quotation, changes the status of the quotation ,
      * updates the total sum assured and locks the tokens of the cover against a quote.
      * @param from Quote member Ethereum address.
-     */  
+     */
 
     function _makeCover ( //solhint-disable-line
         address payable from,
@@ -356,7 +359,7 @@ contract Quotation is Iupgradable {
      * @dev Makes a vover.
      * @param from address of funder.
      * @param scAddress Smart Contract Address
-     */  
+     */
     function _verifyCoverDetails(
         address payable from,
         address scAddress,
@@ -372,6 +375,10 @@ contract Quotation is Iupgradable {
         require(coverDetails[3] > now);
         require(!qd.timestampRepeated(coverDetails[4]));
         qd.setTimestampRepeated(coverDetails[4]);
+
+        require(coverDetails[5] == coverPurchaseNonces[scAddress]);
+        coverPurchaseNonces[scAddress]++;
+
         require(verifySign(coverDetails, coverPeriod, coverCurr, scAddress, _v, _r, _s));
         _makeCover(from, scAddress, coverCurr, coverDetails, coverPeriod);
 
@@ -380,19 +387,19 @@ contract Quotation is Iupgradable {
     /**
      * @dev Updates the Sum Assured Amount of all the quotation.
      * @param _cid Cover id
-     * @param _amount that will get subtracted Current Sum Assured 
+     * @param _amount that will get subtracted Current Sum Assured
      * amount that comes under a quotation.
-     */ 
+     */
     function _removeSAFromCSA(uint _cid, uint _amount) internal checkPause {
         address _add;
         bytes4 coverCurr;
         (, , _add, coverCurr, , ) = qd.getCoverDetailsByCoverID1(_cid);
-        qd.subFromTotalSumAssured(coverCurr, _amount);        
+        qd.subFromTotalSumAssured(coverCurr, _amount);
         qd.subFromTotalSumAssuredSC(_add, coverCurr, _amount);
     }
 
     /**
-     * @dev to trigger the kyc process 
+     * @dev to trigger the kyc process
      * @param status is the kyc status
      * @param _add is the address of member
      */
@@ -415,7 +422,7 @@ contract Quotation is Iupgradable {
         uint joinFee = td.joiningFee();
         if (status) {
             mr.payJoiningFee.value(joinFee)(userAdd);
-            if (coverDetails[3] > now) { 
+            if (coverDetails[3] > now) {
                 qd.setHoldedCoverIDStatus(holdedCoverID, uint(QuotationData.HCIDStatus.kycPass));
                 address poolAdd = ms.getLatestAddress("P1");
                 if (coverCurr == "ETH") {
@@ -424,7 +431,7 @@ contract Quotation is Iupgradable {
                     erc20 = IERC20(pd.getCurrencyAssetAddress(coverCurr)); //solhint-disable-line
                     require(erc20.transfer(poolAdd, coverDetails[1]));
                 }
-                emit RefundEvent(userAdd, status, holdedCoverID, "KYC Passed");               
+                emit RefundEvent(userAdd, status, holdedCoverID, "KYC Passed");
                 _makeCover(userAdd, scAddress, coverCurr, coverDetails, coverPeriod);
 
             } else {
@@ -449,6 +456,6 @@ contract Quotation is Iupgradable {
             userAdd.transfer(totalRefund);
             emit RefundEvent(userAdd, status, holdedCoverID, "KYC Failed");
         }
-              
+
     }
 }

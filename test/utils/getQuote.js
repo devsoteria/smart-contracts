@@ -15,6 +15,7 @@ async function getQuoteValues (...args) {
     price_nxm: args[0][2],
     expire: args[0][3],
     generationTime: args[0][4],
+    contractNonce:  args[0][5],
     quotationContract: args[4],
   };
 
@@ -27,6 +28,7 @@ async function getQuoteValues (...args) {
     { value: bigNumberToBN(order.price_nxm), type: 'uint' },
     { value: bigNumberToBN(order.expire), type: 'uint' },
     { value: bigNumberToBN(order.generationTime), type: 'uint' },
+    { value: bigNumberToBN(order.contractNonce), type: 'uint' },
     { value: order.quotationContract, type: 'address' },
   ];
 

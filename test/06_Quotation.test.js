@@ -331,6 +331,7 @@ contract('Quotation', function([
                 coverHolder
               );
               initialTotalSupply = (await tk.totalSupply()).div(P_18);
+              coverDetails[5] = await qt.coverPurchaseNonces(smartConAdd);
               var vrsdata = await getQuoteValues(
                 coverDetails,
                 toHex('ETH'),
@@ -459,6 +460,7 @@ contract('Quotation', function([
               );
               initialTotalSupply = (await tk.totalSupply()).div(P_18);
               coverDetails[4] = 7972408607001;
+              coverDetails[5] = await qt.coverPurchaseNonces(smartConAdd);
               var vrsdata = await getQuoteValues(
                 coverDetails,
                 toHex('ETH'),
@@ -563,6 +565,7 @@ contract('Quotation', function([
               initialPoolBalanceOfCA = await cad.balanceOf(P1.address);
               const initialTotalSupply = await tk.totalSupply();
               coverDetailsDai[4] = 7972408607002;
+              coverDetailsDai[5] = await qt.coverPurchaseNonces(smartConAdd);
               var vrsdata = await getQuoteValues(
                 coverDetailsDai,
                 toHex('DAI'),
@@ -712,6 +715,7 @@ contract('Quotation', function([
               initialStakeCommissionOfS1 = await ps.stakerReward.call(staker1);
               initialStakeCommissionOfS2 = await ps.stakerReward.call(staker2);
               coverDetails[4] = 7972408607003;
+              coverDetails[5] = await qt.coverPurchaseNonces(smartConAdd);
               var vrsdata = await getQuoteValues(
                 coverDetails,
                 toHex('ETH'),
