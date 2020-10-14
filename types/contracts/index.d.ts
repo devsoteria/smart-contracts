@@ -2066,6 +2066,11 @@ export interface DisposableMemberRolesInstance
     ): Promise<number>;
   };
 
+  getClaimPayoutAddress(
+    _member: string | BigNumber,
+    txDetails?: Truffle.TransactionDetails
+  ): Promise<string>;
+
   memberRolesInitiate: {
     (
       _firstAB: string | BigNumber,
@@ -2151,6 +2156,25 @@ export interface DisposableMemberRolesInstance
   };
 
   maxABCount(txDetails?: Truffle.TransactionDetails): Promise<BigNumber>;
+
+  setClaimPayoutAddress: {
+    (
+      _address: string | BigNumber,
+      txDetails?: Truffle.TransactionDetails
+    ): Promise<Truffle.TransactionResponse>;
+    call(
+      _address: string | BigNumber,
+      txDetails?: Truffle.TransactionDetails
+    ): Promise<void>;
+    sendTransaction(
+      _address: string | BigNumber,
+      txDetails?: Truffle.TransactionDetails
+    ): Promise<string>;
+    estimateGas(
+      _address: string | BigNumber,
+      txDetails?: Truffle.TransactionDetails
+    ): Promise<number>;
+  };
 
   switchMembership: {
     (_add: string | BigNumber, txDetails?: Truffle.TransactionDetails): Promise<
@@ -7263,6 +7287,11 @@ export interface MemberRolesInstance extends Truffle.ContractInstance {
     ): Promise<number>;
   };
 
+  getClaimPayoutAddress(
+    _member: string | BigNumber,
+    txDetails?: Truffle.TransactionDetails
+  ): Promise<string>;
+
   memberRolesInitiate: {
     (
       _firstAB: string | BigNumber,
@@ -7348,6 +7377,25 @@ export interface MemberRolesInstance extends Truffle.ContractInstance {
   };
 
   maxABCount(txDetails?: Truffle.TransactionDetails): Promise<BigNumber>;
+
+  setClaimPayoutAddress: {
+    (
+      _address: string | BigNumber,
+      txDetails?: Truffle.TransactionDetails
+    ): Promise<Truffle.TransactionResponse>;
+    call(
+      _address: string | BigNumber,
+      txDetails?: Truffle.TransactionDetails
+    ): Promise<void>;
+    sendTransaction(
+      _address: string | BigNumber,
+      txDetails?: Truffle.TransactionDetails
+    ): Promise<string>;
+    estimateGas(
+      _address: string | BigNumber,
+      txDetails?: Truffle.TransactionDetails
+    ): Promise<number>;
+  };
 
   switchMembership: {
     (_add: string | BigNumber, txDetails?: Truffle.TransactionDetails): Promise<
