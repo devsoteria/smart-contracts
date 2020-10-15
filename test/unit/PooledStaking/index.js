@@ -1,20 +1,29 @@
 const setup = require('./setup');
 const snapshot = require('../utils').snapshot;
+const coverage = true;
 
 describe('PooledStaking unit tests', function () {
 
   this.timeout(0);
   this.slow(2000);
 
-  before(setup);
+  if (!coverage) {
 
-  beforeEach(async function () {
-    this.snapshotId = await snapshot.takeSnapshot();
-  });
+    before(setup);
 
-  afterEach(async function () {
-    await snapshot.revertToSnapshot(this.snapshotId);
-  });
+    beforeEach(async function () {
+      this.snapshotId = await snapshot.takeSnapshot();
+    });
+
+    afterEach(async function () {
+      await snapshot.revertToSnapshot(this.snapshotId);
+    });
+
+  } else {
+
+    beforeEach(setup);
+
+  }
 
   require('./updateUintParameters');
   require('./depositAndStake');

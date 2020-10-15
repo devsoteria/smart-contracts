@@ -93,16 +93,19 @@ describe('burns', function () {
   this.timeout(0);
   this.slow(5000);
 
-  before(setup);
-  before(initMembers);
+  beforeEach(setup);
+  beforeEach(initMembers);
 
-  beforeEach(async function () {
-    this.snapshotId = await snapshot.takeSnapshot();
-  });
-
-  afterEach(async function () {
-    await snapshot.revertToSnapshot(this.snapshotId);
-  });
+  // before(setup);
+  // before(initMembers);
+  //
+  // beforeEach(async function () {
+  //   this.snapshotId = await snapshot.takeSnapshot();
+  // });
+  //
+  // afterEach(async function () {
+  //   await snapshot.revertToSnapshot(this.snapshotId);
+  // });
 
   it('claim is accepted for contract whose staker that staked on multiple contracts', async function () {
 

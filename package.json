@@ -43,6 +43,7 @@
     "ethlint": "^1.2.5",
     "mocha": "^7.1.2",
     "nodemon": "^2.0.2",
+    "solidity-coverage": "^0.7.11",
     "truffle-flattener": "github:shark0der/truffle-flattener",
     "truffle-typings": "^1.0.8"
   },
